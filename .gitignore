@@ -2,5 +2,5 @@ dist
 *.pyc
 *.pyo
 *.egg-info
-
+.idea
 

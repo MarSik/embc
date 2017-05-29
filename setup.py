@@ -16,10 +16,12 @@ setup(
     keywords = "embedded cmake",
     packages = find_packages(),
     scripts = ["embc"],
+    # TODO add template files from embedded_cmake/templates
     setup_requires = [
         'nose>=1.0',
         'gitpython',
-        'docopt'
+        'docopt',
+        'jinja2'
     ],
     test_suite = "embc",
     long_description=read('README.md'),

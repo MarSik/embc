@@ -14,3 +14,11 @@ def clone(url, destination):
     empty_repo.heads.master.checkout()  # checkout local "master" to working tree
     return True
 
+def update(destination):
+    repo = git.Repo(destination)
+    origin = repo.remotes.origin
+    origin.fetch()
+    repo.create_head('master', origin.refs.master, force=True)\
+        .set_tracking_branch(origin.refs.master)\
+        .checkout()
+    repo.head.reset(index=True, working_tree=True)
