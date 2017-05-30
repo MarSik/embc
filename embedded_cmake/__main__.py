@@ -2,6 +2,7 @@
 Usage:
   embc list
   embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>]
+  embc install <url>
   embc build [--verbose]
   embc update
   embc -h | --help
@@ -23,12 +24,27 @@ import subprocess
 from jinja2 import Template
 
 from . import environment as env
-from .gitutils import clone, update
+from .gitutils import update
+import glob
 
+
+from .download import download, download_git
+from .libs import identify_template
+
+def install_cmake():
+    if not os.path.exists(env.CMAKE_ROOT):
+        os.makedirs(env.CMAKE_ROOT)
+        print("Downloading cmake...")
+        download(env.CMAKE_PACKAGE, env.CMAKE_ROOT)
+
+def find_cmake():
+    candidates = glob.glob(os.path.join(env.CMAKE_ROOT, "cmake-*", "bin", "cmake"))
+    return candidates[0]
 
 def install_embedded_cmake():
     if not os.path.exists(env.CMAKE_SCRIPTS):
-        clone(env.CMAKE_SCRIPTS_URL, env.CMAKE_SCRIPTS)
+        print("Downloading embedded cmake scripts...")
+        download_git(env.CMAKE_SCRIPTS_URL, env.CMAKE_SCRIPTS)
 
 def update_embedded_cmake():
     install_embedded_cmake()
@@ -56,6 +72,34 @@ def prepare_template(filename, toolchain_name, *args, **kwargs):
     else:
         print("Keeping the existing " + filename + " intact")
 
+def run_cmake(*args):
+    cmake_bin = find_cmake()
+    cmake_bindir = os.path.dirname(cmake_bin)
+    cmake_root = os.path.abspath(os.path.dirname(cmake_bindir))
+
+    newenv = {}
+    newenv.update(os.environ)
+    newenv["CMAKE_ROOT"] = cmake_root
+    newenv["PATH"] = cmake_bindir + ":" + newenv["PATH"]
+
+    subprocess.Popen(("cmake",) + args,
+                     executable = cmake_bin,
+                     env = newenv).wait()
+
+def find_initialized_root():
+    cwd = os.getcwd()
+    while cwd and not os.path.exists(os.path.join(cwd, "CMakeLists.txt")):
+        cwd = os.path.dirname(cwd)
+    return cwd
+
+def switch_to_initialized_root():
+    root = find_initialized_root()
+    if not root:
+        print("Could not find initialized project root.")
+        exit(1)
+    if root != os.getcwd():
+        print("Using {root} as the project root.".format(root=root))
+    os.chdir(root)
 
 if __name__ == "__main__":
     options = docopt.docopt(__doc__, version = "0.1")
@@ -66,6 +110,7 @@ if __name__ == "__main__":
         exit(1)
 
     if options["update"]:
+        install_cmake()
         update_embedded_cmake()
         exit(0)
 
@@ -77,7 +122,15 @@ if __name__ == "__main__":
           if toolchain.endswith(".cmake") ]
         exit(0)
 
+    if options["install"]:
+        switch_to_initialized_root()
+        dirname = download(options["<url>"], root="lib")
+        print(identify_template(dirname))
+        exit(0)
+
     if options["build"]:
+        switch_to_initialized_root()
+        install_cmake()
         makecmd = ["make"]
         if options["--verbose"]:
             makecmd.append("VERBOSE=1")
@@ -94,6 +147,7 @@ if __name__ == "__main__":
         exit(0)
 
     if options["init"]:
+        install_cmake()
         install_embedded_cmake()
         toolchain_name = options["<toolchain>"]
         toolchain = os.path.join(env.TOOLCHAINS_DIR, toolchain_name + ".cmake")
@@ -115,23 +169,30 @@ if __name__ == "__main__":
         except OSError:
             pass
 
+        # Prepare toolchain file
+        tpl_file = os.path.join(os.path.dirname(__file__), "templates", "Toolchain.cmake")
+        toolchain_file = "Toolchain-{name}.cmake".format(name=toolchain_name)
+        with open(tpl_file, "r") as tpl_fd,\
+                open(toolchain_file, "w") as toolchain_fd:
+            template = Template(tpl_fd.read())
+            toolchain_fd.write(template.render(
+                TOOLCHAIN_NAME = toolchain_name,
+                TOOLCHAIN_FILE = toolchain,
+                PREFIX_PATH = env.PACKAGES_DIR,
+                DOWNLOAD_DIR = env.PACKAGES_DIR,
+                TOOLCHAIN_ROOT = env.PACKAGES_DIR
+            ))
+
         cwd = os.getcwd()
         os.chdir("build-" + toolchain_name)
 
-        new_env = {}
-        new_env.update(os.environ)
-        new_env["TOOLCHAIN_ROOT"] = env.PACKAGES_DIR
+        run_cmake("--no-warn-unused-cli",
+                  "-Wno-dev",
+                  "-DDOWNLOAD_DEPENDENCIES=1",
+                  "-DCMAKE_TOOLCHAIN_FILE=../" + toolchain_file,
+                  "-DCMAKE_BUILD_TYPE=Release",
+                  "..")
 
-        subprocess.Popen(["cmake",
-                          "--no-warn-unused-cli",
-                          "-Wno-dev",
-                          "-DDOWNLOAD_DEPENDENCIES=1",
-                          "-DCMAKE_PREFIX_PATH=" + env.PACKAGES_DIR,
-                          "-DDOWNLOAD_DIR=" + env.PACKAGES_DIR,
-                          "-DCMAKE_TOOLCHAIN_FILE=" + toolchain,
-                          "-DCMAKE_BUILD_TYPE=Release",
-                          ".."],
-                         env = new_env).wait()
         os.chdir(cwd)
         exit(0)
 
