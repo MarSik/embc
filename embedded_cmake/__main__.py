@@ -33,7 +33,6 @@ from .libs import identify_template
 
 def install_cmake():
     if not os.path.exists(env.CMAKE_ROOT):
-        os.makedirs(env.CMAKE_ROOT)
         print("Downloading cmake...")
         download(env.CMAKE_PACKAGE, env.CMAKE_ROOT)
 
