@@ -1,4 +1,5 @@
 from os.path import join, exists, isdir
+import os.path
 
 
 def is_platform(dirname):
@@ -41,4 +42,4 @@ def identify_template(dirname):
     ]
     for test, cmake in order:
         if test(dirname):
-            return join(__file__, "templates", cmake)
+            return join(os.path.dirname(__file__), "templates", cmake)

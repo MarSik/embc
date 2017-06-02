@@ -1,9 +1,6 @@
-# CMake configuration for {{ name }}
-FUNCTION(USE_{{ name }} PROJECT)
-FIND_OR_DOWNLOAD("{{ name }}" "{{ url }}" "{{ name }}.{{ format }}")
-SET_PROPERTY(TARGET ${PROJECT} APPEND PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/lib/{{ name }}")
+# CMake configuration for {{ name }} from {{ url }}
+SET_PROPERTY(TARGET ${PROJECT} APPEND PROPERTY INCLUDE_DIRECTORIES "${TOOLCHAIN_ROOT}/{{ name }}")
 FILE(GLOB FOUND
-     "${PROJECT_SOURCE_DIR}/lib/{{ name }}/*.[cCsShH]"
-     "${PROJECT_SOURCE_DIR}/lib/{{ name }}/*.[cCsShH][pP][pP]")
+     "${TOOLCHAIN_ROOT}/{{ name }}/*.[cCsShH]"
+     "${TOOLCHAIN_ROOT}/{{ name }}/*.[cCsShH][pP][pP]")
 SET_PROPERTY(TARGET ${PROJECT} APPEND PROPERTY SOURCES ${FOUND})
-ENDFUNCTION(USE_{{ name }} PROJECT)

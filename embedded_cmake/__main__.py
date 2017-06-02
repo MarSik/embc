@@ -123,8 +123,25 @@ if __name__ == "__main__":
 
     if options["install"]:
         switch_to_initialized_root()
-        dirname = download(options["<url>"], root="lib")
-        print(identify_template(dirname))
+        url=options["<url>"]
+        dirname, fmt = download(url, root=env.PACKAGES_DIR)
+        try:
+            os.makedirs(env.PROJECT_LIB)
+        except OSError:
+            pass
+
+        name = os.path.basename(dirname)
+        tplpath = identify_template(dirname)
+        cmakepath = os.path.join(env.PROJECT_LIB, "use-" + name + ".cmake")
+
+        with open(tplpath) as tplfd, open(cmakepath, "w") as cmakefd:
+            template = Template(tplfd.read())
+            cmakefd.write(template.render(
+                name=name,
+                format=fmt,
+                url=url,
+                dirname=dirname
+            ))
         exit(0)
 
     if options["build"]:

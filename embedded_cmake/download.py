@@ -7,7 +7,7 @@ try:
     from urlparse import urlparse
 except ImportError:
     from urllib.parse import urlparse
-from os.path import splitext, basename, dirname, join
+from os.path import splitext, basename, dirname, join, exists
 from os import makedirs
 
 
@@ -33,7 +33,7 @@ def download(url, dest=None, unpack=True, root=None):
         dest = join(root, dest)
 
     if url.startswith("git://") or url.endswith(".git"):
-        return download_git(url, dest)
+        return download_git(url, dest), "git"
     else:
         return download_http(url, dest, unpack)
 
@@ -42,15 +42,16 @@ def download_http(url, dest, unpack=True):
     r = requests.get(url)
     if r.status_code == requests.codes.ok:
         if unpack and r.headers['content-type'] in ("application/x-gzip", "application/x-gtar", "application/x-tgz", "application/tar", "application/tar+gzip", "application/tar+bzip2"):
-            return unpack_tar_response(r, dest)
+            return unpack_tar_response(r, dest), "tgz"
         elif unpack and r.headers['content-type'] in ("application/zip",):
-            return unpack_zip_response(r, dest)
+            return unpack_zip_response(r, dest), "zip"
         else:
-            return unpack_file_response(r, dest)
+            return unpack_file_response(r, dest), "raw"
 
 
 def download_git(url, dest):
-    gitutils.clone(url, dest)
+    if not exists(dest):
+        gitutils.clone(url, dest)
     return dest
 
 
