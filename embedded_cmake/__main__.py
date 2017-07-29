@@ -205,7 +205,7 @@ if __name__ == "__main__":
         run_cmake("--no-warn-unused-cli",
                   "-Wno-dev",
                   "-DDOWNLOAD_DEPENDENCIES=1",
-                  "-DCMAKE_TOOLCHAIN_FILE=../" + toolchain_file,
+                  "-DCMAKE_TOOLCHAIN_FILE=" + os.path.join(cwd, toolchain_file),
                   "-DCMAKE_BUILD_TYPE=Release",
                   "..")
 
