@@ -1,7 +1,7 @@
 """
 Usage:
   embc list
-  embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>]
+  embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>] [--debug]
   embc install <url>
   embc build [--verbose]
   embc update
@@ -208,7 +208,7 @@ if __name__ == "__main__":
                   "-Wno-dev",
                   "-DDOWNLOAD_DEPENDENCIES=1",
                   "-DCMAKE_TOOLCHAIN_FILE=" + os.path.join(cwd, toolchain_file),
-                  "-DCMAKE_BUILD_TYPE=Release",
+                  "-DCMAKE_BUILD_TYPE=Release" if not options["--debug"] else "-DCMAKE_BUILD_TYPE=Debug",
                   "..")
 
         os.chdir(cwd)
