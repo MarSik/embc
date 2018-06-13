@@ -40,10 +40,26 @@ def find_cmake():
     candidates = glob.glob(os.path.join(env.CMAKE_ROOT, "cmake-*", "bin", "cmake"))
     return candidates[0]
 
+def in_git_repo():
+    path = env.CWD
+    while path != "/" and \
+            path != "" and \
+            not os.path.exists(os.path.join(path, ".git")):
+        path = os.path.dirname(path)
+    return os.path.exists(os.path.join(path, ".git"))
+
 def install_embedded_cmake():
     if not os.path.exists(env.CMAKE_SCRIPTS):
-        print("Downloading embedded cmake scripts...")
-        download_git(env.CMAKE_SCRIPTS_URL, env.CMAKE_SCRIPTS)
+        if in_git_repo():
+            subprocess.call(["git", "submodule", "init"])
+            subprocess.call(["git", "submodule", "update"])
+            if os.path.exists(env.CMAKE_SCRIPTS):
+                return
+            print("Adding embedded cmake scripts as submodule...")
+            subprocess.call(["git", "submodule", "add", env.CMAKE_SCRIPTS_URL, env.CMAKE_SCRIPTS_SUBDIR])
+        else:
+            print("Downloading embedded cmake scripts...")
+            download_git(env.CMAKE_SCRIPTS_URL, env.CMAKE_SCRIPTS)
 
 def update_embedded_cmake():
     install_embedded_cmake()

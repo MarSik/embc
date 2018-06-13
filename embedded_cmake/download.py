@@ -9,7 +9,7 @@ except ImportError:
     from urllib.parse import urlparse
 from os.path import splitext, basename, dirname, join, exists
 from os import makedirs
-
+import os
 
 def download_name(url):
     disassembled = urlparse(url)
@@ -50,6 +50,11 @@ def download_http(url, dest, unpack=True):
 
 
 def download_git(url, dest):
+    parent_dir = os.path.dirname(dest)
+    try:
+        makedirs(parent_dir)
+    except os.error:
+	pass
     if not exists(dest):
         gitutils.clone(url, dest)
     return dest
