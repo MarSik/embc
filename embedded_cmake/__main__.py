@@ -1,7 +1,7 @@
 """
 Usage:
   embc list
-  embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>] [--debug]
+  embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>] [--debug] [--] [<args>...]
   embc install <url>
   embc build [--verbose]
   embc update
@@ -220,12 +220,16 @@ if __name__ == "__main__":
         cwd = os.getcwd()
         os.chdir("build-" + toolchain_name)
 
-        run_cmake("--no-warn-unused-cli",
-                  "-Wno-dev",
-                  "-DDOWNLOAD_DEPENDENCIES=1",
-                  "-DCMAKE_TOOLCHAIN_FILE=" + os.path.join(cwd, toolchain_file),
-                  "-DCMAKE_BUILD_TYPE=Release" if not options["--debug"] else "-DCMAKE_BUILD_TYPE=Debug",
-                  "..")
+        cmake_args = [
+           "--no-warn-unused-cli",
+           "-Wno-dev",
+           "-DDOWNLOAD_DEPENDENCIES=1",
+           "-DCMAKE_TOOLCHAIN_FILE=" + os.path.join(cwd, toolchain_file),
+           "-DCMAKE_BUILD_TYPE=Release" if not options["--debug"] else "-DCMAKE_BUILD_TYPE=Debug" ] + \
+           options["<args>"] + \
+           [ ".." ]
+
+        run_cmake(*cmake_args)
 
         os.chdir(cwd)
         exit(0)
