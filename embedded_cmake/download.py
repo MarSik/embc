@@ -41,9 +41,9 @@ def download(url, dest=None, unpack=True, root=None):
 def download_http(url, dest, unpack=True):
     r = requests.get(url)
     if r.status_code == requests.codes.ok:
-        if unpack and r.headers['content-type'] in ("application/x-gzip", "application/x-gtar", "application/x-tgz", "application/tar", "application/tar+gzip", "application/tar+bzip2"):
+        if unpack and (r.headers['content-type'] in ("application/x-gzip", "application/x-gtar", "application/x-tgz", "application/tar", "application/tar+gzip", "application/tar+bzip2") or url.endswith(".tar.gz")):
             return unpack_tar_response(r, dest), "tgz"
-        elif unpack and r.headers['content-type'] in ("application/zip",):
+        elif unpack and (r.headers['content-type'] in ("application/zip",) or url.endswith(".zip")):
             return unpack_zip_response(r, dest), "zip"
         else:
             return unpack_file_response(r, dest), "raw"
@@ -65,7 +65,10 @@ def unpack_tar_response(r, dest):
         tarfd.write(r.content)
         tarfd.seek(0)
 
-        makedirs(dest)
+        try:
+            makedirs(dest)
+        except os.error:
+            pass
         with tarfile.open(fileobj = tarfd) as tar:
             for member in tar:
                 if member.name.startswith("..") or member.name.startswith("/"):
@@ -79,14 +82,20 @@ def unpack_zip_response(r, dest):
         tmpfd.write(r.content)
         tmpfd.seek(0)
 
-        makedirs(dest)
+        try:
+            makedirs(dest)
+        except os.error:
+            pass
         with zipfile.ZipFile(tmpfd, "r") as zipfd:
             zipfd.extractall(dest)
     return dest
 
 
 def unpack_file_response(r, dest):
-    makedirs(dirname(dest))
+    try:
+        makedirs(dirname(dest))
+    except os.error:
+        pass
     with open(dest, "wb") as filefd:
         filefd.write(r.content)
     return dest
