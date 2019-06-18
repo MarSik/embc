@@ -3,7 +3,7 @@ Usage:
   embc list
   embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>] [--debug] [--] [<args>...]
   embc install <url>
-  embc build [--verbose]
+  embc build [--verbose] [<toolchain>]
   embc update
   embc -h | --help
   embc --version
@@ -167,15 +167,20 @@ if __name__ == "__main__":
         if options["--verbose"]:
             makecmd.append("VERBOSE=1")
 
-        for f in os.listdir("."):
-            if os.path.isdir(f) and f.startswith("build-"):
-                cwd = os.getcwd()
-                os.chdir(f)
-                print("--- Building {toolchain} ---".format(toolchain = f[6:]))
-                rc = subprocess.Popen(makecmd).wait()
-                os.chdir(cwd)
-                if rc != 0:
-                    exit(1)
+        if options["<toolchain>"]:
+            toolchains = ["build-" + options["<toolchain>"]]
+        else:
+            toolchains = [f for f in os.listdir(".")
+                            if os.path.isdir(f) and f.startswith("build-")]
+
+        for toolchain in toolchains:
+            cwd = os.getcwd()
+            os.chdir(toolchain)
+            print("--- Building {toolchain} ---".format(toolchain = toolchain[6:]))
+            rc = subprocess.Popen(makecmd).wait()
+            os.chdir(cwd)
+            if rc != 0:
+                exit(1)
         exit(0)
 
     if options["init"]:
@@ -217,6 +222,10 @@ if __name__ == "__main__":
                 TOOLCHAIN_ROOT = env.PACKAGES_DIR
             ))
 
+        src_dir = ".."
+        if os.path.exists("target-" + toolchain_name):
+            src_dir = "../target-" + toolchain_name
+
         cwd = os.getcwd()
         os.chdir("build-" + toolchain_name)
 
@@ -227,7 +236,7 @@ if __name__ == "__main__":
            "-DCMAKE_TOOLCHAIN_FILE=" + os.path.join(cwd, toolchain_file),
            "-DCMAKE_BUILD_TYPE=Release" if not options["--debug"] else "-DCMAKE_BUILD_TYPE=Debug" ] + \
            options["<args>"] + \
-           [ ".." ]
+           [ src_dir ]
 
         run_cmake(*cmake_args)
 
