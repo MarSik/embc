@@ -3,7 +3,7 @@ Usage:
   embc list
   embc init <toolchain> [--cpu=<cpu>] [-f=<frequency>] [--debug] [--] [<args>...]
   embc install <url>
-  embc build [--verbose] [<toolchain>]
+  embc build [--verbose] [<toolchain> [<target>...]]
   embc update
   embc -h | --help
   embc --version
@@ -164,6 +164,10 @@ if __name__ == "__main__":
         switch_to_initialized_root()
         install_cmake()
         makecmd = ["make"]
+
+        if options["<target>"]:
+            makecmd += options["<target>"]
+
         if options["--verbose"]:
             makecmd.append("VERBOSE=1")
 
