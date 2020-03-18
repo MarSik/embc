@@ -1,8 +1,10 @@
 import tarfile
 import zipfile
-import gitutils
 import requests
 import tempfile
+
+from . import gitutils
+
 try:
     from urlparse import urlparse
 except ImportError:
@@ -54,7 +56,7 @@ def download_git(url, dest):
     try:
         makedirs(parent_dir)
     except os.error:
-	pass
+        pass
     if not exists(dest):
         gitutils.clone(url, dest)
     return dest

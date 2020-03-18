@@ -198,13 +198,20 @@ if __name__ == "__main__":
             exit(1)
 
         # Prepare template CMakefile
-	TEMPLATE_DIR=os.path.join(env.TEMPLATE_DIR, toolchain_name)
-	if os.path.exists(TEMPLATE_DIR):
-            for tpl in os.listdir(TEMPLATE_DIR):
-                prepare_template(tpl,
-                                 toolchain_name,
-                                 CPU = options["--cpu"],
-                                 F_CPU = options["-f"])
+        TEMPLATE_DIR=os.path.join(env.TEMPLATE_DIR, toolchain_name)
+        if os.path.exists(TEMPLATE_DIR):
+            for dirname, dirdirs, files in os.walk(TEMPLATE_DIR):
+                dirname = os.path.relpath(dirname, TEMPLATE_DIR)
+                try:
+                    os.makedirs(dirname)
+                except OSError:
+                    pass
+
+                for tpl in files:
+                    prepare_template(os.path.join(dirname, tpl),
+                                     toolchain_name,
+                                     CPU = options["--cpu"],
+                                     F_CPU = options["-f"])
 
         # Create build directory
         try:
